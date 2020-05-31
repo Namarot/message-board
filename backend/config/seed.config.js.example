@@ -1,0 +1,6 @@
+module.exports = {
+  Admin01_email: "admin@example.com",
+  Admin01_PW: "hunter1",
+  Moderator01_email: "moderator@example.com",
+  Moderator01_PW: "foobar"
+};

@@ -1,0 +1,41 @@
+version: "3.7"
+services:
+  mysql-db:
+    build:
+      context: .
+      dockerfile: /vagrant/docker/db/Dockerfile
+    volumes:
+      - mysql_volume:/var/lib/mysql
+    networks:
+      - backend-db
+    environment:
+      MYSQL_ROOT_PASSWORD: hunter1
+    restart: unless-stopped
+  backend:
+    build:
+      context: .
+      dockerfile: /vagrant/docker/backend/Dockerfile
+    networks:
+      - backend-db
+    ports:
+      - "8080:8080"
+    command: ["./wait-for-it.sh", "-t", "120", "mysql-db:3306", "--", "node", "app.js"]
+    restart: unless-stopped
+    links:
+      - mysql-db
+  frontend:
+    build:
+      context: .
+      dockerfile: /vagrant/docker/frontend/Dockerfile
+    ports:
+      - "8081:8080"
+    restart: unless-stopped
+networks:
+  backend-db:
+    driver: "bridge"
+    ipam:
+      driver: default
+      config:
+        - subnet: 192.168.8.0/24
+volumes:
+  mysql_volume: {}

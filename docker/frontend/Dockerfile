@@ -1,0 +1,6 @@
+FROM node:lts-alpine
+
+WORKDIR /app
+COPY frontend /app/
+RUN npm install
+CMD ["npm", "run", "serve"]
