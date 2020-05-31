@@ -1,7 +1,7 @@
 const db = require("../models");
 const Pm = db.pm;
 const User = db.user;
-const Op =  Sequelize.Op;
+const Op =  db.Sequelize.Op;
 
 exports.getPms = (req, res) => {
   Pm.findAll({
