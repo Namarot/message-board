@@ -22,12 +22,13 @@ exports.adminBoard = (req, res) => {
 exports.getUsers = (req, res) => {
   User.findAll().then(users => {
     var usersReply = [];
-    var userTemp = {};
+    // var userTemp = {};
     for (let i = 0; i < users.length; i++) {
-      userTemp.id = users[i].id;
-      userTemp.username = users[i].username;
-      userTemp.email = users[i].email;
-      usersReply.push(userTemp);
+      usersReply.push({});
+      usersReply[i].id = users[i].id;
+      usersReply[i].username = users[i].username;
+      usersReply[i].email = users[i].email;
+      // usersReply.push(userTemp);
     }
     res.status(200).send(usersReply);
   }).catch(err => {
