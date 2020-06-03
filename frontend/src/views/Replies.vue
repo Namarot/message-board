@@ -30,7 +30,12 @@
           </button>
         </div>
         <div class="form-group">
-          <div v-if="submitMessage" class="alert alert-danger" role="alert">{{submitMessage}}</div>
+          <div
+            v-if="submitMessage"
+            class="alert"
+            :class="submitSuccessful ? 'alert-success' : 'alert-danger'"
+            role="alert"
+          >{{submitMessage}}</div>
         </div>
       </form>
     </div>
@@ -61,12 +66,14 @@ export default {
   data() {
     return {
       parentThread: {},
+      tempObj: {},
       replyList: [],
       usrReply: new Reply(""),
       loading: false,
       successful: false,
       message: "",
-      submitMessage: ""
+      submitMessage: "",
+      submitSuccessful: false
     };
   },
   computed: {
@@ -76,42 +83,44 @@ export default {
   },
   mounted() {
     // if (this.$route.params.threadId) {
-      ThreadService.getThread(this.$route.params.threadId).then(
-        response => {
-          this.parentThread.title = response.data.title;
-          this.parentThread.content = response.data.content;
-          this.parentThread.userId = response.data.userId;
-          UserService.getUser(this.parentThread.userId).then(
+    ThreadService.getThread(this.$route.params.threadId).then(
+      response => {
+        this.tempObj = response.data;
+        // this.parentThread.title = response.data.title;
+        // this.parentThread.content = response.data.content;
+        // this.parentThread.userId = response.data.userId;
+        UserService.getUser(response.data.userId).then(
+          response => {
+            this.tempObj.username = response.data.username;
+            this.parentThread = this.tempObj;
+          },
+          error => {
+            this.message = error.response.data.message;
+          }
+        );
+      },
+      error => {
+        this.message = error.response.data.message;
+      }
+    );
+    ThreadService.getThreadReplies(this.$route.params.threadId).then(
+      response => {
+        response.data.forEach(element => {
+          UserService.getUser(element.userId).then(
             response => {
-              this.parentThread.username = response.data.username;
+              element.username = response.data.username;
+              this.replyList.push(element);
             },
             error => {
               this.message = error.response.data.message;
             }
           );
-        },
-        error => {
-          this.message = error.response.data.message;
-        }
-      );
-      ThreadService.getThreadReplies(this.$route.params.threadId).then(
-        response => {
-          response.data.forEach(element => {
-            UserService.getUser(element.userId).then(
-              response => {
-                element.username = response.data.username;
-                this.replyList.push(element);
-              },
-              error => {
-                this.message = error.response.data.message;
-              }
-            );
-          });
-        },
-        error => {
-          this.message = error.response.data.message;
-        }
-      );
+        });
+      },
+      error => {
+        this.message = error.response.data.message;
+      }
+    );
     // }
   },
   methods: {
@@ -124,9 +133,37 @@ export default {
         }
         ThreadService.newReply(this.$route.params.threadId, this.usrReply).then(
           () => {
-            // this.usrReply.content = "";
+            this.usrReply.content = "";
+            this.$validator.pause();
+            this.$nextTick(() => {
+              this.$validator.errors.clear();
+              this.$validator.fields.items.forEach(field => field.reset());
+              this.$validator.fields.items.forEach(field =>
+                this.errors.remove(field)
+              );
+              this.$validator.resume();
+            });
+            this.replyList = [];
+            ThreadService.getThreadReplies(this.$route.params.threadId).then(
+              response => {
+                response.data.forEach(element => {
+                  UserService.getUser(element.userId).then(
+                    response => {
+                      element.username = response.data.username;
+                      this.replyList.push(element);
+                    },
+                    error => {
+                      this.message = error.response.data.message;
+                    }
+                  );
+                });
+              },
+              error => {
+                this.message = error.response.data.message;
+              }
+            );
             this.submitMessage = "Reply submitted";
-            this.successful = true;
+            this.submitSuccessful = true;
             this.loading = false;
           },
           error => {
